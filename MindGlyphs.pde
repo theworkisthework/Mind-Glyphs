@@ -9,10 +9,10 @@ String serialPortId = "COM11";
 
 ArrayList<MindFlexDataSet> mindFlexData = new ArrayList<MindFlexDataSet>();  // This is the array list that stores each data point read from the MindFlex headset. It has a .get() method that returns an array of the data points
 
-int cols = 25;  // How many cols across the page
+int cols = 15;  // How many cols across the page
 int rows = 25;  // How many rows down the page
 
-float circleSize = 10;  // This is the overall size of each glyph
+float circleSize = 7;  // This is the overall size of each glyph
 float randomOffSet = 0;  // Does nothing now
 
 // Calculated variables
@@ -25,18 +25,24 @@ int gAttentionLevel;
 boolean activeHeadset = false;
 float feed = 2500;
 
+// A0 = 841, 1188
+// A1 = 594, 841
+// A2 = 420, 594
+// A3 = 297, 420
+// A4 = 210, 297
+
 void setup() {
-  //restartMindSet();
-  // See if we have the com port we expect
-  //checkSerialPort();
+  size(297, 420);  
+
   mindSet = new MindSet(this, "COM11");
-  senderInit("G10 P0 L20 X0 Y0 Z0", true);
+  senderInit("G10 L20 P1 X150 Y580 Z0", true); // FluidNC wallbot A2 offset "G10 L20 P1 X150 Y160 Z0" Note: This plots from bottom up ?!?!
+  // TODO: Slow down data collection so we are keeping up with the plotter. Can we know when a plot event has completed?
   // Setup the page
   frameRate(1);
   background(255);
   noFill();
   stroke(150);
-  size(1280, 891);
+   
   
   // Calculate the row and column spacing for the given screen size and number of rows and cols
   colSpacing = width/cols;
