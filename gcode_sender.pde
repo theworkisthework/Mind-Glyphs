@@ -20,17 +20,32 @@ works as is.
 
 import processing.serial.*;
 
-Serial myPort = new Serial(this, "COM5", 115200);
+Serial myPort = new Serial(this, "COM9", 115200);
 int counter =0;
 boolean grblInit = false;
+
+// Initial idea was to send 10 commands and wait until they are all received, but this isn't asyncronous so
+// commands are only sent as fast (and as many) as the controller will allow. 
+// Next idea is to rate limit them to no more than 1 a second?
+String[] commandQueue = new String[1000];
+int maxQueueLen = 10;
+int lastUpdate = frameCount;
+
 
 
 String getGrblResponse(){
   // Blocks until we see a new line (the GRBL end of response terminator)
   String response = null;
   print("Waiting for grbl");
+  //println("frameCount = " + frameCount + "lastupdate = "+lastUpdate + " frameRate*10 = "+(frameRate*10));
+  //if (frameCount > 0){
+  //  while (frameCount<(lastUpdate+(frameRate*10))){
+  //    //println("frameCount = " + frameCount + "lastupdate = "+lastUpdate + " frameRate*10 = "+(frameRate*10));
+  //    //println("Waiting for framecount");
+  //  }
+  //}
   while (myPort.available() < 4){ // 4 chars minimum expected 'o' 'k' '/' 'n'
-    print(".");
+    //print(".");
     delay(50);
   }
   // Port is availalbe so read its contents.
@@ -46,10 +61,12 @@ String getGrblResponse(){
 
 String sendGrblCommand(String command){
   // Send a gcode command and get and return the response
-  print("Sending: ");
+  myPort.write("?");
+  println(getGrblResponse());
   println(command);
   myPort.write(command);
   myPort.write(10);  // Send newline char '\n' (10 in ASCII)
+  // getGrblResponse blocks...
   return getGrblResponse();  // Get and return the response
 }
 
@@ -62,6 +79,7 @@ void senderInit(String initCommand, boolean skipGrblCheck) {
     grblInit = true;
     print("Sending init command: ");
         println(initCommand);
+        // sendGrblCommand calls getGrblResponse which blocks
         response = sendGrblCommand(initCommand);
         if (response.contains("ok")){
           println("Init command received ok");
@@ -90,6 +108,7 @@ void senderInit(String initCommand, boolean skipGrblCheck) {
 void sender(String gcode) {
   // Sends to gcode string grbl and handle the responses
   String response = "";
+  // If the sender has been initialized send a command
   if (grblInit) {
     response = sendGrblCommand(gcode);
     
@@ -114,11 +133,13 @@ void sender(String gcode) {
 void moveTo(float x, float y, float feed){
   // Wrapper around sender() to format gcode G0 messages
   int floatPrecision = 3;
-  sender("G0 X" + nf(x, 0, floatPrecision) + " Y" + nf(y, 0, floatPrecision) + " F" + nf(feed, 0, floatPrecision));
+  //sender("G0 X" + nf(x, 0, floatPrecision) + " Y" + nf(y, 0, floatPrecision) + " Z5 F" + nf(feed, 0, floatPrecision));
+  gcodeFile.println("G0 X" + nf(x, 0, floatPrecision) + " Y" + nf(y, 0, floatPrecision) + " Z5 F" + nf(feed, 0, floatPrecision));
 }
 
 void drawTo(float x, float y, float feed){
   // Wrapper around sender() to format gcode G1 messages
   int floatPrecision = 3;
-  sender("G1 X" + nf(x, 0, floatPrecision) + " Y" + nf(y, 0, floatPrecision) + " F" + nf(feed, 0, floatPrecision));
+  //sender("G1 X" + nf(x, 0, floatPrecision) + " Y" + nf(y, 0, floatPrecision) + " Z0 F" + nf(feed, 0, floatPrecision));
+  gcodeFile.println("G1 X" + nf(x, 0, floatPrecision) + " Y" + nf(y, 0, floatPrecision) + " Z0 F" + nf(feed, 0, floatPrecision));
 }

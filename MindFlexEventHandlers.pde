@@ -1,5 +1,5 @@
 public void poorSignalEvent(int sig) {
-  println("Signal level: " + sig);
+  //println("Signal level: " + sig);
   if (sig < 100){
   activeHeadset = true;} else {
   activeHeadset = false;}
@@ -34,7 +34,11 @@ public void eegEvent(int delta, int theta, int low_alpha, int high_alpha, int lo
   
   // Then we store that object in the array
   if (activeHeadset){
+    if (readyToReceive) {
     mindFlexData.add(mindFlexDataSet);
+    readyToReceive = false;
+    previousCount++;
   }
+}
    
 } 
